@@ -429,25 +429,25 @@ class Axes3D(Axes):
             artist for artist in self._children
             if isinstance(artist, (mcoll.Collection, mpatches.Patch))
             and artist.get_visible())
-        if self.computed_zorder:
-            # Calculate projection of collections and patches and zorder
-            # them. Make sure they are drawn above the grids.
-            zorder_offset = max(axis.get_zorder()
-                                for axis in self._axis_map.values()) + 1
-            collection_zorder = patch_zorder = zorder_offset
-
-            for artist in sorted(collections_and_patches,
-                                 key=lambda artist: artist.do_3d_projection(),
-                                 reverse=True):
-                if isinstance(artist, mcoll.Collection):
-                    artist.zorder = collection_zorder
-                    collection_zorder += 1
-                elif isinstance(artist, mpatches.Patch):
-                    artist.zorder = patch_zorder
-                    patch_zorder += 1
+        
+        if self.force_zorder:
+            for col in self.collections:
+                col.zorder = zorder_offset + col.zorder
+            for patch in self.patches:
+                patch.zorder = zorder_offset + patch.zorder
         else:
-            for artist in collections_and_patches:
-                artist.do_3d_projection()
+            zorder_offset = max(axis.get_zorder()
+                                for axis in self._get_axis_list()) + 1
+            for i, col in enumerate(
+                    sorted(self.collections,
+                           key=lambda col: col.do_3d_projection(renderer),
+                           reverse=True)):
+                col.zorder = zorder_offset + i
+            for i, patch in enumerate(
+                    sorted(self.patches,
+                           key=lambda patch: patch.do_3d_projection(renderer),
+                           reverse=True)):
+                patch.zorder = zorder_offset + i
 
         if self._axis3don:
             # Draw panes first
